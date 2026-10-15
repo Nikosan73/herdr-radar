@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.4.5 — 2026-10-15
+
+- **A worktree only gets a corner under its own project.** With `order =
+  off` the panel keeps Herdr's order, where a worktree opened later sits at
+  the end of the list — and its `├─` hung it off whichever project happened
+  to be above it. A worktree that is not directly under its parent (or an
+  attached sibling) is now drawn as one whose parent is absent: the repo
+  name on a row of its own, its own `└─` below. The plugin's own order holds
+  a family in one block, so nothing changes there.
+  [#54](https://github.com/hhdebb/herdr-radar/issues/54) reported by
+  @doominkim.
+
+- **Moved session records are found.** The stale shading for panes that
+  predate the daemon reads each CLI's own session record, but looked for
+  them under the home directory only. The lookup now honours
+  `CLAUDE_CONFIG_DIR` and `CODEX_HOME`, as Claude Code and Codex do; the
+  defaults are unchanged.
+  [#58](https://github.com/hhdebb/herdr-radar/issues/58) reported by
+  @cameronsjo.
+
 ## 1.4.4 — 2026-10-09
 
 - **Every named session gets its sidebar.** Herdr gives every session the
