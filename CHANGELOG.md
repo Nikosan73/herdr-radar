@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.7 — 2026-10-17
+
+- **A Space with no agent no longer reads `· ·`.** Herdr puts its own ` · `
+  between a Spaces mark and the workspace name, and the mark for a
+  workspace with nothing running was a middle dot too, so a plain shell
+  workspace showed two dots that looked like two states. That mark is now
+  a small hollow bullet, `◦ · name`, still one narrow character, so the
+  names stay aligned. Reported in
+  [#61](https://github.com/hhdebb/herdr-radar/issues/61) by @86label and
+  [#63](https://github.com/hhdebb/herdr-radar/issues/63) by
+  @JasonLandbridge.
+
 ## 1.4.6 — 2026-10-17
 
 - **No second copy of a repo for a worktree away from its family.** 1.4.5
