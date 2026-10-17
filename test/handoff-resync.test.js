@@ -134,9 +134,17 @@ test('a frame that forgot its writes republishes a workspace label', async (t) =
   assert.equal(again.space_label, 'General', 'a new server never got the workspace label');
 });
 
-// Unix only: the stream is found through HERDR_SOCKET_PATH, which on Windows
-// names a marker file beside a pipe rather than the endpoint itself.
-test('a reconnected subscription says so', { skip: process.platform === 'win32', timeout: 10000 }, async (t) => {
+// Where a fake server listens so lib/subscribe.js finds it. On unix
+// HERDR_SOCKET_PATH is the socket itself. On Windows it names a marker file,
+// whose presence says the server is still there, and the stream is the named
+// pipe registered under that whole path.
+function listenAt(server, at) {
+  if (process.platform !== 'win32') return new Promise((resolve) => server.listen(at, resolve));
+  fs.writeFileSync(at, '');
+  return new Promise((resolve) => server.listen(`\\\\.\\pipe\\${at}`, resolve));
+}
+
+test('a reconnected subscription says so', { timeout: 10000 }, async (t) => {
   const at = path.join(os.tmpdir(), `herdr-radar-sub-${process.pid}-${Math.random().toString(36).slice(2, 8)}.sock`);
   const previous = process.env.HERDR_SOCKET_PATH;
   process.env.HERDR_SOCKET_PATH = at;
@@ -154,7 +162,7 @@ test('a reconnected subscription says so', { skip: process.platform === 'win32',
       if (first) setTimeout(() => socket.destroy(), 20);
     });
   });
-  await new Promise((resolve) => server.listen(at, resolve));
+  await listenAt(server, at);
 
   let wakes = 0;
   let subscription;
@@ -182,40 +190,36 @@ test('a reconnected subscription says so', { skip: process.platform === 'win32',
 
 // A server that refuses the subscription answers with an error line and hangs
 // up. Every retry after that is the same refusal, not a new server.
-test(
-  'a refused subscription is not a reconnection',
-  { skip: process.platform === 'win32', timeout: 10000 },
-  async (t) => {
-    const at = path.join(os.tmpdir(), `herdr-radar-sub-${process.pid}-${Math.random().toString(36).slice(2, 8)}.sock`);
-    const previous = process.env.HERDR_SOCKET_PATH;
-    process.env.HERDR_SOCKET_PATH = at;
+test('a refused subscription is not a reconnection', { timeout: 10000 }, async (t) => {
+  const at = path.join(os.tmpdir(), `herdr-radar-sub-${process.pid}-${Math.random().toString(36).slice(2, 8)}.sock`);
+  const previous = process.env.HERDR_SOCKET_PATH;
+  process.env.HERDR_SOCKET_PATH = at;
 
-    let connections = 0;
-    let third;
-    const thirdAttempt = new Promise((resolve) => (third = resolve));
-    const server = net.createServer((socket) => {
-      connections += 1;
-      if (connections === 3) third();
-      socket.once('data', () => socket.end('{"id":"daemon-sub","error":{"code":"invalid_params"}}\n'));
-      socket.on('error', () => {});
-    });
-    await new Promise((resolve) => server.listen(at, resolve));
+  let connections = 0;
+  let third;
+  const thirdAttempt = new Promise((resolve) => (third = resolve));
+  const server = net.createServer((socket) => {
+    connections += 1;
+    if (connections === 3) third();
+    socket.once('data', () => socket.end('{"id":"daemon-sub","error":{"code":"invalid_params"}}\n'));
+    socket.on('error', () => {});
+  });
+  await listenAt(server, at);
 
-    let reconnects = 0;
-    const subscription = subscribe.start({ onWake: () => {}, onReconnect: () => (reconnects += 1), onGone: () => {} });
-    t.after(async () => {
-      subscription.stop();
-      await new Promise((resolve) => server.close(resolve));
-      fs.rmSync(at, { force: true });
-      if (previous === undefined) delete process.env.HERDR_SOCKET_PATH;
-      else process.env.HERDR_SOCKET_PATH = previous;
-    });
+  let reconnects = 0;
+  const subscription = subscribe.start({ onWake: () => {}, onReconnect: () => (reconnects += 1), onGone: () => {} });
+  t.after(async () => {
+    subscription.stop();
+    await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(at, { force: true });
+    if (previous === undefined) delete process.env.HERDR_SOCKET_PATH;
+    else process.env.HERDR_SOCKET_PATH = previous;
+  });
 
-    await thirdAttempt;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    assert.equal(reconnects, 0, 'every refused retry repainted the whole sidebar');
-  },
-);
+  await thirdAttempt;
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  assert.equal(reconnects, 0, 'every refused retry repainted the whole sidebar');
+});
 
 // Herdr refuses a request as a whole when one entry is malformed, and it only
 // offers agent status per pane: listing it bare kept the stream from ever
