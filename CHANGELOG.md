@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.4.6 — 2026-10-17
+
+- **No second copy of a repo for a worktree away from its family.** 1.4.5
+  stopped such a worktree from hanging a corner off the project above it
+  by drawing it as if its parent were absent, with the repo name on a row
+  of its own. When the parent was on the panel after all, just higher up,
+  that row was a duplicate of it. A worktree whose parent is listed but
+  not right above it is now drawn detached: a top-level row with its
+  worktree mark, no corner and no repo row.
+  [#62](https://github.com/hhdebb/herdr-radar/issues/62) reported by
+  @JasonLandbridge.
+
+- **The `active` order comes back on its own.** Herdr keeps the view
+  override in the server's memory only, so anything that replaced the
+  server without running the startup hook left the panel in Herdr's own
+  order, while the group headers were still placed for radar's. A header
+  then landed mid-group, and the panes above it read as part of the
+  project before. The daemon now sets the chosen order again every 15
+  seconds; Herdr's own order, once chosen, is left alone.
+  [#49](https://github.com/hhdebb/herdr-radar/issues/49) reported by
+  @PannenetsF.
+
 ## 1.4.5 — 2026-10-15
 
 - **A worktree only gets a corner under its own project.** With `order =
