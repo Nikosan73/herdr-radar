@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.4.8 — 2026-10-18
+
+- **The sidebar repaints in full after a live handoff.** A handoff
+  replaces Herdr's server under a daemon that keeps running, and the new
+  server holds none of the plugin's tokens. The daemon still remembered
+  every token as sent, so whatever had not changed since was never
+  written again: group headers, indents, logos and sort keys stayed
+  missing until the daemon was restarted. A reconnect now makes the next
+  frame write everything, and puts the chosen order back on the panel.
+
+- **The daemon runs on events again.** Its subscription listed the agent
+  status event without the pane id Herdr requires for it, and Herdr
+  refuses the whole request over one malformed entry. The stream never
+  opened, and the daemon ran on a one-second retry loop instead. The
+  stream opens now; agent status is picked up by a one-second heartbeat,
+  as quickly as before.
+
+  Both found and fixed by @noomz in
+  [#51](https://github.com/hhdebb/herdr-radar/pull/51).
+
 ## 1.4.7 — 2026-10-17
 
 - **A Space with no agent no longer reads `· ·`.** Herdr puts its own ` · `
