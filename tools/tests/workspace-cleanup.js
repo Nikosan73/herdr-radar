@@ -7,8 +7,14 @@ const { Frame } = require('../../lib/frame');
 async function main() {
   let clears = 0;
   let writes = 0;
-  state.clearSpaceState = async () => { clears += 1; return false; };
-  state.writeSpaceState = async () => { writes += 1; return true; };
+  state.clearSpaceState = async () => {
+    clears += 1;
+    return false;
+  };
+  state.writeSpaceState = async () => {
+    writes += 1;
+    return true;
+  };
   const frame = new Frame('plugin:hhdebb.herdr-radar');
   frame.lastSpace.set('deleted', 'old');
   frame.failedAt.set('space:deleted', { count: 3, until: Date.now() + 60000 });
@@ -31,4 +37,7 @@ async function main() {
   console.log('workspace cleanup: ok');
 }
 
-main().catch((error) => { console.error(error); process.exitCode = 1; });
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
