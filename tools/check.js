@@ -24,4 +24,5 @@ if (problems.length) {
   console.error(problems.join('\n'));
   process.exit(1);
 }
+execFileSync(process.execPath, [path.join(root, 'tools', 'tests', 'workspace-cleanup.js')], { stdio: 'inherit' });
 console.log('ok');
